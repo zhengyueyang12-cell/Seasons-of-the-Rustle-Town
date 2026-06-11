@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://dvsxbsggbsjtj"]
+
+[ext_resource type="Texture2D" uid="uid://cuhw65gmtaj1o" path="res://icon.svg" id="1_pmagx"]
+[ext_resource type="Script" uid="uid://cikpwqdl03mbi" path="res://resources/item_resource.gd" id="1_up04n"]
+
+[resource]
+script = ExtResource("1_up04n")
+id = &"potion_001"
+display_name = "治疗药水"
+description = "恢复50点生命"
+icon = ExtResource("1_pmagx")
+sell_price = 50
+metadata/_custom_type_script = "uid://cikpwqdl03mbi"

@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://cglw1bw4bbvmj"]
+
+[node name="InventorySlot" type="Button" unique_id=15562468]
+offset_right = 8.0
+offset_bottom = 8.0
+
+[node name="Icon" type="TextureRect" parent="." unique_id=123520153]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Quantity" type="Label" parent="." unique_id=389662177]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0

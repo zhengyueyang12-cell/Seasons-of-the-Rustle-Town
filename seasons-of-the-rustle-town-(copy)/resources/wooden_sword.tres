@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WeaponResource" format=3 uid="uid://2lql388u3fol"]
+
+[ext_resource type="Script" uid="uid://cfhf0w7e3tajf" path="res://resources/weapon_resource.gd" id="1_4t6ji"]
+[ext_resource type="Texture2D" uid="uid://cuhw65gmtaj1o" path="res://icon.svg" id="2_im2hw"]
+
+[resource]
+script = ExtResource("1_4t6ji")
+weapon_sprite = ExtResource("2_im2hw")
+id = &"wooden_sword"
+display_name = "木剑"
+icon = ExtResource("2_im2hw")
+sell_price = 10
+metadata/_custom_type_script = "uid://cfhf0w7e3tajf"

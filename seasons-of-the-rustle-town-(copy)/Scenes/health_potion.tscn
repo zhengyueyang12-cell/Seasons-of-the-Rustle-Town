@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://csjv7myg1qak3"]
+
+[ext_resource type="Script" uid="uid://yv7d6tbsdsou" path="res://item_pickup.gd" id="1_dquon"]
+[ext_resource type="Resource" uid="uid://dvsxbsggbsjtj" path="res://resources/healthpotion.tres" id="2_rf4us"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_mccjk"]
+
+[node name="HealthPotion" type="Area2D" unique_id=821726991]
+collision_layer = 2
+script = ExtResource("1_dquon")
+item_data = ExtResource("2_rf4us")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=450377549]
+shape = SubResource("CapsuleShape2D_mccjk")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1036319293]
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
