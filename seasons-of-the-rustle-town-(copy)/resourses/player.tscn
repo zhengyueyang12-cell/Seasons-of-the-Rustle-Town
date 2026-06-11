@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://coreghln4cuo4"]
+
+[ext_resource type="Script" uid="uid://bi43jii1723kh" path="res://GDScripts/player_movement.gd" id="1_movement"]
+[ext_resource type="Script" uid="uid://chtpqoe321h1d" path="res://GDScripts/weapon_manager.gd" id="2_weapon_mgr"]
+[ext_resource type="Texture2D" uid="uid://cin7kcujkm2ob" path="res://sprites/runright-rapier.png" id="2_whqyu"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_whqyu"]
+atlas = ExtResource("2_whqyu")
+region = Rect2(175, 2, 175, 325)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_t4ot6"]
+atlas = ExtResource("2_whqyu")
+region = Rect2(350, 2, 175, 325)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_t4ot6"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_whqyu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_t4ot6")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="Player" type="CharacterBody2D" unique_id=304408121]
+script = ExtResource("1_movement")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=129342913]
+position = Vector2(0, -7)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=759638355]
+sprite_frames = SubResource("SpriteFrames_t4ot6")
+frame_progress = 0.24709605
+
+[node name="Weapon" type="Node2D" parent="." unique_id=1293922490]
+position = Vector2(12, -8)
+
+[node name="Sprite2D" type="Sprite2D" parent="Weapon" unique_id=148851489]
+
+[node name="WeaponManager" type="Node" parent="." unique_id=1512207837]
+script = ExtResource("2_weapon_mgr")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=905983708]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1885815062]
+position = Vector2(19, -6)

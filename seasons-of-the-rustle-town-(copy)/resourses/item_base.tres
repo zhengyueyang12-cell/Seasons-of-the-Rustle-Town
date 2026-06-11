@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ItemResource" load_steps=2 format=3 uid="uid://dfxph58p65n50"]
+
+[ext_resource type="Script" path="res://resources/item_resource.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"item_base"
+display_name = "基础物品"
+max_stack = 99
