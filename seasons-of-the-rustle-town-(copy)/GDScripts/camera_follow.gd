@@ -1,6 +1,6 @@
 extends Camera2D
 
-@export var follow_target_path: NodePath = ^"../YSort_Objects/Player"
+@export var follow_target_path: NodePath = NodePath("../YSort_Objects/Player")
 @export var smoothing_speed: float = 5.0
 @export var use_custom_bounds: bool = true
 @export var world_bounds_min: Vector2 = Vector2(-500.0, -500.0)

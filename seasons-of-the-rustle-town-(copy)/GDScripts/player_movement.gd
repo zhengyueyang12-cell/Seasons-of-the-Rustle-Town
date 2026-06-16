@@ -7,6 +7,9 @@ signal movement_stopped()
 
 var is_moving: bool = false
 
+# 获取状态机节点
+@onready var animation_state_machine = $AnimationStateMachine
+
 
 func _physics_process(_delta: float) -> void:
 	var direction: Vector2 = Input.get_vector(
@@ -19,7 +22,11 @@ func _physics_process(_delta: float) -> void:
 	velocity = direction * move_speed
 	move_and_slide()
 
-	_set_moving_state(direction != Vector2.ZERO)
+	var moving = direction != Vector2.ZERO
+	_set_moving_state(moving)
+	
+	# 更新动画状态机（传递速度向量，而不是布尔值）
+	animation_state_machine.update_state(velocity)
 
 
 func _set_moving_state(moving: bool) -> void:

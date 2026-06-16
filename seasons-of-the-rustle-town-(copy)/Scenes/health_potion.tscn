@@ -6,6 +6,7 @@
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_mccjk"]
 
 [node name="HealthPotion" type="Area2D" unique_id=821726991]
+scale = Vector2(0.02, 0.02)
 collision_layer = 2
 script = ExtResource("1_dquon")
 item_data = ExtResource("2_rf4us")

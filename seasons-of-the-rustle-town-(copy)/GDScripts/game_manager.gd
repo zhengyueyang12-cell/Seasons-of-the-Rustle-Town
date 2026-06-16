@@ -13,6 +13,34 @@ func _ready() -> void:
 
 func _initialize_systems() -> void:
 	UIManager.refresh_all_displays()
+	_grant_starter_items()
+	_equip_player_hotbar(0)
+
+
+func _grant_starter_items() -> void:
+	if InventoryManager.get_item_count(&"wooden_hoe") == 0:
+		var hoe: ToolResource = ToolRegistry.get_tool(&"wooden_hoe")
+		if hoe != null:
+			InventoryManager.add_item(hoe, 1)
+
+	if InventoryManager.get_item_count(&"rapier") == 0:
+		var rapier: WeaponResource = WeaponRegistry.get_weapon(&"rapier")
+		if rapier != null:
+			InventoryManager.add_item(rapier, 1)
+
+	if InventoryManager.get_item_count(&"wooden_axe") == 0:
+		var axe: ToolResource = ToolRegistry.get_tool(&"wooden_axe")
+		if axe != null:
+			InventoryManager.add_item(axe, 1)
+
+
+func _equip_player_hotbar(slot_index: int) -> void:
+	var player: Node = get_node_or_null("World/YSort_Objects/Player")
+	if player == null:
+		return
+	var equipment: EquipmentController = player.get_node_or_null("EquipmentController") as EquipmentController
+	if equipment != null:
+		equipment.equip_from_hotbar(slot_index)
 
 
 func _connect_signals() -> void:

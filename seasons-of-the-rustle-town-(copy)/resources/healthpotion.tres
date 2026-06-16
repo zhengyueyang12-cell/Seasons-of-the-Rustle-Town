@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://dvsxbsggbsjtj"]
 
-[ext_resource type="Texture2D" uid="uid://cuhw65gmtaj1o" path="res://icon.svg" id="1_pmagx"]
+[ext_resource type="Texture2D" uid="uid://c3oq6p6xp0bno" path="res://art/items/consumables/potion-pack/Potion 1/Potion1.1.png" id="1_pmagx"]
 [ext_resource type="Script" uid="uid://cikpwqdl03mbi" path="res://resources/item_resource.gd" id="1_up04n"]
 
 [resource]
