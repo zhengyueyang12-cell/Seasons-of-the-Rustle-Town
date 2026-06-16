@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ToolResource" format=3]
+
+[ext_resource type="Script" uid="uid://vd25ejiittkr" path="res://resources/tool_resource.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://ckhailtduc58m" path="res://art/items/tools/axe.png" id="2_axe"]
+
+[resource]
+script = ExtResource("1_script")
+tool_type = 2
+tier = 1
+energy_cost = 3
+use_range = 72.0
+effect_radius = 0.5
+use_cooldown = 0.4
+held_sprite = ExtResource("2_axe")
+id = &"wooden_axe"
+display_name = "木斧"
+description = "砍伐树木与树桩。左键挥砍，消耗 3 点体力。"
+icon = ExtResource("2_axe")
+max_stack = 1
+sell_price = 40

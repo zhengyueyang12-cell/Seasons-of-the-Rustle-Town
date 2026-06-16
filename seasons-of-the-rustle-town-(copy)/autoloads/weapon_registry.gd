@@ -1,10 +1,12 @@
 extends Node
 
+const WEAPONS_DIR: String = "res://resources/weapons/"
+
 var _weapons: Dictionary = {}
 
 
 func _ready() -> void:
-	_register_default_weapons()
+	_load_weapons_from_directory()
 
 
 func register_weapon(weapon_id: StringName, weapon: WeaponResource) -> void:
@@ -13,6 +15,7 @@ func register_weapon(weapon_id: StringName, weapon: WeaponResource) -> void:
 		return
 	weapon.id = weapon_id
 	_weapons[weapon_id] = weapon
+	ItemRegistry.register_item(weapon)
 
 
 func get_weapon(weapon_id: StringName) -> WeaponResource:
@@ -42,69 +45,25 @@ func has_weapon(weapon_id: StringName) -> bool:
 	return _weapons.has(weapon_id)
 
 
-func _register_default_weapons() -> void:
-	register_weapon(&"wooden_sword", _create_weapon(
-		&"木剑",
-		WeaponResource.WeaponType.MELEE,
-		8,
-		1.2,
-		0.05
-	))
-	register_weapon(&"iron_sword", _create_weapon(
-		&"铁剑",
-		WeaponResource.WeaponType.MELEE,
-		15,
-		1.0,
-		0.10
-	))
-	register_weapon(&"rapier", _create_rapier())
-	register_weapon(&"greatsword", _create_greatsword())
+func _load_weapons_from_directory() -> void:
+	var dir: DirAccess = DirAccess.open(WEAPONS_DIR)
+	if dir == null:
+		push_warning("WeaponRegistry: 无法打开武器目录 %s" % WEAPONS_DIR)
+		return
 
-
-func _create_weapon(
-	display_name: String,
-	weapon_type: WeaponResource.WeaponType,
-	damage: int,
-	attack_speed: float,
-	crit_rate: float,
-	crit_damage: float = 1.5,
-	knockback: float = 50.0
-) -> WeaponResource:
-	var weapon: WeaponResource = WeaponResource.new()
-	weapon.display_name = display_name
-	weapon.weapon_type = weapon_type
-	weapon.damage = damage
-	weapon.attack_speed = attack_speed
-	weapon.crit_rate = crit_rate
-	weapon.crit_damage = crit_damage
-	weapon.knockback = knockback
-	weapon.max_stack = 1
-	return weapon
-
-
-func _create_rapier() -> WeaponResource:
-	var weapon: WeaponResource = _create_weapon(
-		&"细剑",
-		WeaponResource.WeaponType.MELEE,
-		12,
-		1.5,
-		0.15,
-		1.8
-	)
-	var sprite_path: String = "res://sprites/runright-rapier.png"
-	if ResourceLoader.exists(sprite_path):
-		weapon.weapon_sprite = load(sprite_path) as Texture2D
-		weapon.icon = weapon.weapon_sprite
-	return weapon
-
-
-func _create_greatsword() -> WeaponResource:
-	return _create_weapon(
-		&"巨剑",
-		WeaponResource.WeaponType.MELEE,
-		25,
-		0.6,
-		0.05,
-		1.5,
-		100.0
-	)
+	dir.list_dir_begin()
+	var file_name: String = dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.ends_with(".tres"):
+			var path: String = WEAPONS_DIR + file_name
+			var resource: Resource = load(path)
+			if resource is WeaponResource:
+				var weapon: WeaponResource = resource as WeaponResource
+				if weapon.id == &"":
+					push_warning("WeaponRegistry: %s 缺少 id" % path)
+				else:
+					register_weapon(weapon.id, weapon)
+			else:
+				push_warning("WeaponRegistry: %s 不是 WeaponResource" % path)
+		file_name = dir.get_next()
+	dir.list_dir_end()

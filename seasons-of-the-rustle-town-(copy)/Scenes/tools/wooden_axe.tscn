@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://item_pickup.gd" id="1_pickup"]
+[ext_resource type="Resource" path="res://resources/tools/wooden_axe.tres" id="2_axe"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_axe"]
+
+[node name="WoodenAxe" type="Area2D"]
+scale = Vector2(2, 2)
+collision_layer = 2
+script = ExtResource("1_pickup")
+item_data = ExtResource("2_axe")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+scale = Vector2(3, 3)
+shape = SubResource("CapsuleShape2D_axe")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

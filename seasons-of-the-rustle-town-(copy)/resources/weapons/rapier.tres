@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WeaponResource" format=3 uid="uid://bnwa67anxmffg"]
+
+[ext_resource type="Texture2D" uid="uid://dstxpukstxsm7" path="res://art/items/weapons/sword1.png" id="1_m16th"]
+[ext_resource type="Script" uid="uid://cfhf0w7e3tajf" path="res://resources/weapon_resource.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+damage = 12
+attack_speed = 1.5
+crit_rate = 0.15
+crit_damage = 1.8
+weapon_sprite = ExtResource("1_m16th")
+id = &"rapier"
+display_name = "细剑"
+icon = ExtResource("1_m16th")
+max_stack = 1
+metadata/_custom_type_script = "uid://cfhf0w7e3tajf"

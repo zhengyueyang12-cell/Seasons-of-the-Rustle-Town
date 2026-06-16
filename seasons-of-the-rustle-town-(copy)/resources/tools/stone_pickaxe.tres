@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ToolResource" format=3 uid="uid://dtlode71g3ssb"]
+
+[ext_resource type="Script" uid="uid://vd25ejiittkr" path="res://resources/tool_resource.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://be5tqrsue676l" path="res://art/items/tools/pick1.png" id="1_t53xh"]
+
+[resource]
+script = ExtResource("1_script")
+tool_type = 1
+tier = 2
+energy_cost = 4
+effect_radius = 1.0
+use_cooldown = 0.5
+held_sprite = ExtResource("1_t53xh")
+id = &"stone_pickaxe"
+display_name = "石镐"
+description = "破坏地形与岩石。消耗 4 点体力。"
+icon = ExtResource("1_t53xh")
+max_stack = 1
+sell_price = 80

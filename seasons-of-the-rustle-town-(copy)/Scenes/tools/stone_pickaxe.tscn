@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://bmtme3fkfr7mu"]
+
+[ext_resource type="Script" uid="uid://yv7d6tbsdsou" path="res://item_pickup.gd" id="1_pickup"]
+[ext_resource type="Resource" uid="uid://dtlode71g3ssb" path="res://resources/tools/stone_pickaxe.tres" id="2_pickaxe"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_pick"]
+
+[node name="StonePickaxe" type="Area2D" unique_id=132809168]
+scale = Vector2(2, 2)
+collision_layer = 2
+script = ExtResource("1_pickup")
+item_data = ExtResource("2_pickaxe")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1240380443]
+scale = Vector2(3, 3)
+shape = SubResource("CapsuleShape2D_pick")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1503740962]
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ToolResource" format=3 uid="uid://bmy21mr0yhoeu"]
+
+[ext_resource type="Texture2D" uid="uid://baosyhjxureic" path="res://art/items/tools/hoe1.png" id="1_o7vv0"]
+[ext_resource type="Script" uid="uid://vd25ejiittkr" path="res://resources/tool_resource.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+held_sprite = ExtResource("1_o7vv0")
+id = &"wooden_hoe"
+display_name = "木锄"
+description = "锄开草地，露出泥土。消耗 2 点体力。"
+icon = ExtResource("1_o7vv0")
+max_stack = 1
+sell_price = 20

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponResource" format=3 uid="uid://cfhmnsoqqntpg"]
+
+[ext_resource type="Texture2D" uid="uid://dstxpukstxsm7" path="res://art/items/weapons/sword1.png" id="1_c3n37"]
+[ext_resource type="Script" uid="uid://cfhf0w7e3tajf" path="res://resources/weapon_resource.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+damage = 15
+crit_rate = 0.1
+weapon_sprite = ExtResource("1_c3n37")
+id = &"iron_sword"
+display_name = "铁剑"
+icon = ExtResource("1_c3n37")
+max_stack = 1
+metadata/_custom_type_script = "uid://cfhf0w7e3tajf"
