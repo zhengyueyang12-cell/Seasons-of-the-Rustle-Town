@@ -1,0 +1,22 @@
+﻿feat(equipment): add hotbar weapons, tools, and held-item visuals
+
+Architecture (data-driven equipment)
+------------------------------------
+resources/weapons/*.tres   weapon stats and sprites
+resources/tools/*.tres     hoe, pickaxe, axe configs
+WeaponRegistry / ToolRegistry   scan folders at startup
+
+Player components
+-----------------
+EquipmentController   hotbar 1-8 selects weapon OR tool
+WeaponManager         shows sword sprite in hand
+ToolManager           shows hoe/axe/pickaxe sprite
+CombatController      left-click attack (disabled when tool active)
+ToolController        E key to use tool (hoe digs, axe chops trees)
+HeldItemVisual        flip held item based on facing direction
+
+Removed legacy wooden_sword.gd in favor of unified item_pickup.gd
+
+Controls
+--------
+1-8 hotbar | left-click attack with weapon | E use tool

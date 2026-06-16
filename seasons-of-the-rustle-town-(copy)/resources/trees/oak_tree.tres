@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TreeResource" format=3 uid="uid://dne602aetnsyo"]
+
+[ext_resource type="Script" uid="uid://cxtk8bdxnkjwb" path="res://resources/tree_resource.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dtulow4l3krpa" path="res://art/world/nature/trees/pine_free.png" id="4_small"]
+
+[resource]
+script = ExtResource("1_script")
+stage_textures = Array[Texture2D]([ExtResource("4_small")])
+stage_scales = Array[float]([0.7, 1.0, 1.4, 1.7, 2.0])
+stump_chops_required = 1

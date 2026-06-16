@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://6g8x7i1vxo1f"]
+
+[ext_resource type="Texture2D" uid="uid://bjwcoyufk10l" path="res://art/world/props/rustic-pots/Rustic Plant Pots/Rustic Plant pot Pink.png" id="1_lyw2g"]
+[ext_resource type="Script" uid="uid://cikpwqdl03mbi" path="res://resources/item_resource.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"tree_seed"
+display_name = "树种"
+description = "种在锄过的土地上可长出树木。"
+icon = ExtResource("1_lyw2g")
+sell_price = 25
