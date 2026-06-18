@@ -1,6 +1,5 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://bnkathqqja3wb"]
 
-[ext_resource type="Texture2D" uid="uid://di54t55c88tdy" path="res://art/world/props/rustic-pots/Rustic Roses Pots/Rustic Rose Pot Red.png" id="1_1lk7r"]
 [ext_resource type="Script" uid="uid://cikpwqdl03mbi" path="res://resources/item_resource.gd" id="1_script"]
 
 [resource]
@@ -8,5 +7,4 @@ script = ExtResource("1_script")
 id = &"tree_sap"
 display_name = "树液"
 description = "粘稠的树液，可用于制作。"
-icon = ExtResource("1_1lk7r")
 sell_price = 15

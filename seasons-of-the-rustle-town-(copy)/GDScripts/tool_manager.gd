@@ -98,6 +98,15 @@ func _apply_tool_visual(tool: ToolResource) -> void:
 		_held_sprite.visible = tool.icon != null
 
 
+func show_held_icon(icon: Texture2D) -> void:
+	if _held_sprite == null:
+		return
+	if _held_item_root != null:
+		_held_item_root.visible = true
+	_held_sprite.texture = icon
+	_held_sprite.visible = icon != null
+
+
 func _hide_held_item() -> void:
 	if _held_sprite != null:
 		_held_sprite.texture = null

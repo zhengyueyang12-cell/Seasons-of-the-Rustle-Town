@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://6g8x7i1vxo1f"]
 
-[ext_resource type="Texture2D" uid="uid://bjwcoyufk10l" path="res://art/world/props/rustic-pots/Rustic Plant Pots/Rustic Plant pot Pink.png" id="1_lyw2g"]
+[ext_resource type="Texture2D" uid="uid://dwlbe2mvb6u8" path="res://art/items/TileSheets/treeseeds.png" id="1_lyw2g"]
 [ext_resource type="Script" uid="uid://cikpwqdl03mbi" path="res://resources/item_resource.gd" id="1_script"]
 
 [resource]

@@ -24,7 +24,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _on_melee_attack_pressed() -> void:
-	if _equipment_controller != null and _equipment_controller.is_tool_active:
+	if _equipment_controller != null and not _equipment_controller.is_weapon_active:
 		return
 	if _weapon_manager == null or _animation_state_machine == null:
 		return

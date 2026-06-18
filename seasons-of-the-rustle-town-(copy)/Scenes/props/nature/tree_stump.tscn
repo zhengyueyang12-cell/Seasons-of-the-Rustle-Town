@@ -1,22 +1,18 @@
-[gd_scene format=3 uid="uid://e0rfobnrajbc"]
+[gd_scene format=3 uid="uid://cfg8l8nr4bmt6"]
 
-[ext_resource type="Script" uid="uid://bdoagk71qfs7x" path="res://systems/tree_system/tree_stump.gd" id="1_stump"]
+[ext_resource type="Script" path="res://systems/tree_system/tree_stump.gd" id="1_stump"]
 [ext_resource type="Resource" uid="uid://dne602aetnsyo" path="res://resources/trees/oak_tree.tres" id="2_data"]
-[ext_resource type="Texture2D" uid="uid://v7tmi753rkm" path="res://art/world/nature/trees/stunk.png" id="3_ivksj"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_stump"]
 radius = 14.0
 
-[node name="TreeStump" type="StaticBody2D" unique_id=1130927830]
+[node name="TreeStump" type="StaticBody2D" unique_id=1190905500]
 collision_layer = 2
 script = ExtResource("1_stump")
 tree_data = ExtResource("2_data")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=978057636]
-scale = Vector2(2, 2)
-texture = ExtResource("3_ivksj")
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2056279088]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1552993793]
-position = Vector2(0, 97)
-scale = Vector2(0.775, 0.775)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1251608810]
+position = Vector2(0, -8)
 shape = SubResource("CircleShape2D_stump")

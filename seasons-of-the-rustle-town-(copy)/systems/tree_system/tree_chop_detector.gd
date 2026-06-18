@@ -23,7 +23,11 @@ static func find_chop_target(
 				continue
 
 			var target: Node2D = node as Node2D
-			var to_target: Vector2 = target.global_position - player.global_position
+			var target_pos: Vector2 = target.global_position
+			if target.has_method(&"get_chop_global_position"):
+				target_pos = target.get_chop_global_position()
+
+			var to_target: Vector2 = target_pos - player.global_position
 			var distance: float = to_target.length()
 			if distance > max_range:
 				continue

@@ -4,7 +4,10 @@ signal movement_input(direction: Vector2)
 signal interact_pressed()
 signal inventory_toggled()
 signal hotbar_selected(slot_index: int)
+signal hotbar_scroll(step: int)
 signal melee_attack_pressed()
+
+const HOTBAR_SLOT_COUNT: int = 9
 
 var movement_direction: Vector2 = Vector2.ZERO
 
@@ -23,11 +26,12 @@ func _process(_delta: float) -> void:
 		interact_pressed.emit()
 	if Input.is_action_just_pressed(&"melee_attack"):
 		melee_attack_pressed.emit()
-	if Input.is_action_just_pressed(&"hotbar1"):
-		hotbar_selected.emit(0)
-	if Input.is_action_just_pressed(&"hotbar2"):
-		hotbar_selected.emit(1)
-	if Input.is_action_just_pressed(&"hotbar3"):
-		hotbar_selected.emit(2)
-	if Input.is_action_just_pressed(&"hotbar4"):
-		hotbar_selected.emit(3)
+
+	for i: int in HOTBAR_SLOT_COUNT:
+		if Input.is_action_just_pressed(&"hotbar%d" % (i + 1)):
+			hotbar_selected.emit(i)
+
+	if Input.is_action_just_pressed(&"rolldown"):
+		hotbar_scroll.emit(1)
+	if Input.is_action_just_pressed(&"rollup"):
+		hotbar_scroll.emit(-1)

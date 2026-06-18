@@ -30,19 +30,20 @@ func _ready():
 
 func update_state(velocity: Vector2) -> void:
 	var new_state: State = State.WALKING if velocity != Vector2.ZERO else State.IDLE
-	var new_direction: Direction = get_direction_from_velocity(velocity)
+	var previous_state: State = current_state
+	var previous_direction: Direction = current_direction
 	var previous_facing: Direction = last_non_idle_direction
 
 	if new_state == State.WALKING:
-		current_direction = new_direction
+		current_direction = get_direction_from_velocity(velocity)
 		last_non_idle_direction = current_direction
-	elif new_state == State.IDLE:
+	else:
 		current_direction = last_non_idle_direction
 
 	if last_non_idle_direction != previous_facing:
 		direction_changed.emit(last_non_idle_direction)
 
-	if new_state != current_state or new_direction != current_direction:
+	if new_state != previous_state or current_direction != previous_direction:
 		current_state = new_state
 		play_animation()
 
@@ -55,35 +56,48 @@ func get_direction_from_velocity(velocity: Vector2) -> Direction:
 	else:
 		return Direction.DOWN if velocity.y > 0 else Direction.UP
 
-func play_animation():
-	var anim_name = get_animation_name()
-	
-	if animated_sprite.sprite_frames.has_animation(anim_name):
-		animated_sprite.play(anim_name)
-		
-		# 如果是空闲状态且播放的是行走动画，暂停在第一帧
-		if current_state == State.IDLE and anim_name.begins_with("walk"):
-			animated_sprite.stop()
-			animated_sprite.frame = 0
+func play_animation() -> void:
+	var anim_name: String = get_animation_name()
+
+	if not animated_sprite.sprite_frames.has_animation(anim_name):
+		return
+
+	animated_sprite.play(anim_name)
+
+	# 站立：用对应方向的行走首帧作为 idle（无独立 idle 动画时）
+	if current_state == State.IDLE and anim_name.begins_with("walk"):
+		animated_sprite.stop()
+		animated_sprite.frame = 0
+
+
+func get_walk_animation_name(dir: Direction) -> String:
+	match dir:
+		Direction.DOWN:
+			return "walkdown"
+		Direction.UP:
+			return "walkup"
+		Direction.LEFT:
+			return "walkleft"
+		Direction.RIGHT:
+			return "walkright"
+	return "walkdown"
+
 
 func get_animation_name() -> String:
 	match current_state:
 		State.WALKING:
-			match current_direction:
-				Direction.DOWN:
-					return "walkdown"
-				Direction.UP:
-					return "walkup"
-				Direction.LEFT:
-					return "walkleft"
-				Direction.RIGHT:
-					return "walkright"
+			return get_walk_animation_name(current_direction)
 		State.IDLE:
-			# 使用 default 或根据方向使用不同 idle
+			var idle_anim: String = "idle" + get_direction_string(current_direction)
+			if animated_sprite.sprite_frames.has_animation(idle_anim):
+				return idle_anim
+			var walk_anim: String = get_walk_animation_name(current_direction)
+			if animated_sprite.sprite_frames.get_frame_count(walk_anim) > 0:
+				return walk_anim
 			return "default"
 		State.ATTACKING:
 			return "attack_" + get_direction_string(current_direction)
-	
+
 	return "default"
 
 func get_direction_string(dir: Direction) -> String:

@@ -273,8 +273,7 @@ Invoke-GitCommit -Subject "feat(trees): add tree chopping, ecology, and main wor
 
 树木系统（systems/tree_system/）
 --------------------------------
-tree_entity.gd       五阶段精灵、受击震动、倒下动画、砍倒后留树桩
-tree_stump.gd        树桩再砍一次掉落木材+树液后消失
+tree_entity.gd       五阶段精灵、受击震动、倒下动画、树桩阶段再砍掉落
 tree_chop_detector.gd  根据玩家位置/朝向查找最近可砍目标
 drop_spawner.gd      沿倒下方向散落生成地面掉落物
 farm_zone.gd         Area2D 标记农场范围（影响再生规则）

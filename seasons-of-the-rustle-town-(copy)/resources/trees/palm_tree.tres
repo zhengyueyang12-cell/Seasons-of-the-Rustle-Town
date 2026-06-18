@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="TreeResource" format=3 uid="uid://ctu8atm5i7fv7"]
+
+[ext_resource type="Script" uid="uid://cxtk8bdxnkjwb" path="res://resources/tree_resource.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"palm"
+display_name = "棕榈"
+atlas_key = "tree_palm"
+chops_required = 3
+fall_wood_min = 8
+fall_wood_max = 12
+fall_sap_count = 3
+stump_chops_required = 1

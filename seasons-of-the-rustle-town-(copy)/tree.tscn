@@ -1,19 +1,5 @@
-[gd_scene format=3 uid="uid://b15sk2i8plcos"]
+[gd_scene load_steps=3 format=3 uid="uid://b15sk2i8plcos"]
 
-[ext_resource type="Script" uid="uid://c5sqpckwrs2j8" path="res://systems/tree_system/tree_entity.gd" id="1_nnvrw"]
-[ext_resource type="Resource" uid="uid://dne602aetnsyo" path="res://resources/trees/oak_tree.tres" id="2_gvmkm"]
+[ext_resource type="PackedScene" uid="uid://cxjsgdttqbwqf" path="res://Scenes/props/nature/tree.tscn" id="1_base"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_tree"]
-radius = 18.0
-
-[node name="Tree" type="StaticBody2D" unique_id=815410511]
-collision_layer = 2
-script = ExtResource("1_nnvrw")
-tree_data = ExtResource("2_gvmkm")
-
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1325106596]
-position = Vector2(0, -24)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1272113732]
-position = Vector2(0, 8)
-shape = SubResource("CircleShape2D_tree")
+[node name="Tree" instance=ExtResource("1_base")]

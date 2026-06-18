@@ -5,10 +5,13 @@
 
 [resource]
 script = ExtResource("1_script")
+tool_type = 0
 held_sprite = ExtResource("1_o7vv0")
 id = &"wooden_hoe"
 display_name = "木锄"
-description = "锄开草地，露出泥土。消耗 2 点体力。"
+description = "左键点击范围内草地锄成耕地。消耗 2 点体力。"
+effect_radius = 0.0
+use_range = 96.0
 icon = ExtResource("1_o7vv0")
 max_stack = 1
 sell_price = 20

@@ -39,9 +39,14 @@ func _connect_equip_signals() -> void:
 		weapon_manager.weapon_equipped.connect(_on_item_equipped)
 	if tool_manager != null:
 		tool_manager.tool_equipped.connect(_on_item_equipped)
+	var equipment: EquipmentController = player.get_node_or_null(
+		"EquipmentController"
+	) as EquipmentController
+	if equipment != null:
+		equipment.hotbar_equipped.connect(_on_item_equipped)
 
 
-func _on_item_equipped(_item: ItemResource) -> void:
+func _on_item_equipped(_slot_or_item: Variant, _item: ItemResource = null) -> void:
 	refresh_facing()
 
 

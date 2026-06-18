@@ -4,6 +4,7 @@ class_name ToolController
 @export var tool_manager_path: NodePath = NodePath("../ToolManager")
 @export var equipment_controller_path: NodePath = NodePath("../EquipmentController")
 @export var animation_state_machine_path: NodePath = NodePath("../AnimationStateMachine")
+@export var plant_use_range: float = 96.0
 
 var _tool_manager: ToolManager
 var _equipment_controller: EquipmentController
@@ -27,60 +28,77 @@ func _physics_process(delta: float) -> void:
 
 
 func _on_interact_pressed() -> void:
+	if _use_cooldown_timer > 0.0:
+		return
+
+	var target_pos: Vector2 = _get_interact_target_position()
+
+	if CropService.try_harvest_at(target_pos):
+		_use_cooldown_timer = 0.25
+		return
+
 	if _equipment_controller != null and not _equipment_controller.is_tool_active:
 		return
 	if _tool_manager == null or not _tool_manager.has_tool():
-		return
-	if _use_cooldown_timer > 0.0:
 		return
 
 	var tool: ToolResource = _tool_manager.get_current_tool()
 	if tool == null:
 		return
 
-	# 手持树种时，在锄过的土地上种植
 	if _try_plant_tree_seed():
 		return
 
-	if _tile_destructor == null:
-		push_warning("ToolController: 场景中未找到 tile_destructor 组节点")
-		return
-	if not GameState.use_energy(tool.energy_cost):
-		return
-
-	_use_cooldown_timer = tool.use_cooldown
-	var target_pos: Vector2 = _get_use_global_position(tool.use_range)
-	_apply_tool_effect(tool, target_pos)
-
 
 func _on_melee_attack_pressed() -> void:
+	if _use_cooldown_timer > 0.0:
+		return
+
+	var seed: SeedResource = _get_seed_from_active_hotbar()
+	if seed != null:
+		if _equipment_controller == null:
+			return
+		if CropService.try_plant_at(
+			_get_plant_target_position(),
+			seed,
+			_equipment_controller.active_hotbar_index
+		):
+			_use_cooldown_timer = 0.35
+		return
+
 	if _equipment_controller == null or not _equipment_controller.is_tool_active:
 		return
 	if _tool_manager == null or not _tool_manager.has_tool():
 		return
 
 	var tool: ToolResource = _tool_manager.get_current_tool()
-	if tool == null or tool.tool_type != ToolResource.ToolType.AXE:
+	if tool == null:
 		return
-	if _use_cooldown_timer > 0.0:
+
+	match tool.tool_type:
+		ToolResource.ToolType.HOE, ToolResource.ToolType.PICKAXE:
+			_use_tool_at_mouse(tool)
+		ToolResource.ToolType.AXE:
+			if not GameState.use_energy(tool.energy_cost):
+				return
+			_use_cooldown_timer = tool.use_cooldown
+			_try_chop_tree(tool)
+
+
+func _use_tool_at_mouse(tool: ToolResource) -> void:
+	if _tile_destructor == null:
+		push_warning("ToolController: 场景中未找到 tile_destructor 组节点")
 		return
 	if not GameState.use_energy(tool.energy_cost):
 		return
 
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return
+
+	var target_pos: Vector2 = FarmToolTarget.get_clamped_world_position(player, tool.use_range)
+	_tile_destructor.destroy_tile_at_position(target_pos, tool.effect_radius)
 	_use_cooldown_timer = tool.use_cooldown
-	_try_chop_tree(tool)
-
-
-func _apply_tool_effect(tool: ToolResource, target_pos: Vector2) -> void:
-	match tool.tool_type:
-		ToolResource.ToolType.HOE:
-			_tile_destructor.destroy_tile_at_position(target_pos, tool.effect_radius)
-		ToolResource.ToolType.PICKAXE:
-			_tile_destructor.destroy_tile_at_position(target_pos, tool.effect_radius)
-		ToolResource.ToolType.AXE:
-			_try_chop_tree(tool)
-		_:
-			push_warning("ToolController: 未实现的工具类型 %s" % str(tool.tool_type))
 
 
 func _try_chop_tree(tool: ToolResource) -> void:
@@ -109,19 +127,44 @@ func _try_plant_tree_seed() -> bool:
 	if tool == null:
 		return false
 
-	var plant_pos: Vector2 = _get_use_global_position(tool.use_range)
+	var plant_pos: Vector2 = FarmToolTarget.get_clamped_world_position(player, tool.use_range)
 	return TreeRegenerationService.try_plant_seed_at(plant_pos)
 
 
-func _get_use_global_position(use_range: float) -> Vector2:
+func _get_seed_from_active_hotbar() -> SeedResource:
+	if _equipment_controller == null:
+		return null
+	if _equipment_controller.active_hotbar_index < 0:
+		return null
+
+	var slot: ItemSlotData = HotbarManager.get_slot(
+		_equipment_controller.active_hotbar_index
+	)
+	if slot == null or slot.is_empty:
+		return null
+	if slot.item is SeedResource:
+		return slot.item as SeedResource
+	return null
+
+
+func _get_interact_target_position() -> Vector2:
 	var player: Node2D = get_parent() as Node2D
 	if player == null:
 		return Vector2.ZERO
 
-	var direction: Vector2 = _get_facing_direction()
-	if direction == Vector2.ZERO:
-		direction = Vector2.DOWN
-	return player.global_position + direction.normalized() * use_range
+	var use_range: float = 48.0
+	if _tool_manager != null and _tool_manager.has_tool():
+		var tool: ToolResource = _tool_manager.get_current_tool()
+		if tool != null:
+			use_range = tool.use_range
+	return FarmToolTarget.get_clamped_world_position(player, use_range)
+
+
+func _get_plant_target_position() -> Vector2:
+	var player: Node2D = get_parent() as Node2D
+	if player == null:
+		return Vector2.ZERO
+	return FarmToolTarget.get_clamped_world_position(player, plant_use_range)
 
 
 func _get_facing_direction() -> Vector2:

@@ -1,48 +1,68 @@
+@tool
 class_name TreeEntity
 extends StaticBody2D
 
-## 树木实体：五阶段生长、受击震动、倒下动画与树桩生成。
-
 signal tree_felled(tree: TreeEntity, fall_direction: Vector2)
+signal stump_cleared(tree: TreeEntity, global_pos: Vector2, was_on_farm: bool)
 signal growth_stage_changed(new_stage: TreeResource.GrowthStage)
 
-enum VisualState { IDLE, HIT_SHAKE, FALLING }
+enum TreePhase { GROWING, STANDING, FELLING, FELLED_STUMP }
+enum VisualState { IDLE, FALLING }
 
+@export_group("树木配置")
 @export var tree_data: TreeResource
 @export var initial_stage: TreeResource.GrowthStage = TreeResource.GrowthStage.MATURE
 @export var player_planted: bool = false
 
+@export_group("砍伐判定")
+@export var use_chop_marker: bool = true
+@export var chop_range: float = 72.0
+
 var growth_stage: TreeResource.GrowthStage = TreeResource.GrowthStage.SEED
 var chop_hits: int = 0
+var stump_chop_hits: int = 0
 var growth_stalled: bool = false
 
-var _sprite: Sprite2D
+var _visual: TreeVisual
 var _collision: CollisionShape2D
+var _chop_marker: Marker2D
+var _phase: TreePhase = TreePhase.GROWING
 var _visual_state: VisualState = VisualState.IDLE
-var _base_sprite_position: Vector2 = Vector2.ZERO
-var _shake_tween: Tween
-var _fall_tween: Tween
 
 
 func _ready() -> void:
 	add_to_group(&"tree")
-	_sprite = get_node_or_null("Sprite2D") as Sprite2D
+	_visual = get_node_or_null("TreeVisual") as TreeVisual
 	_collision = get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if _sprite != null:
-		_base_sprite_position = _sprite.position
+	_chop_marker = get_node_or_null("ChopMarker") as Marker2D
 
 	if tree_data == null:
 		tree_data = load("res://resources/trees/oak_tree.tres") as TreeResource
 
-	set_growth_stage(initial_stage)
-	_refresh_choppable_group()
+	if not Engine.is_editor_hint():
+		if _visual != null:
+			_visual.setup(tree_data, initial_stage)
+			_visual.fall_finished.connect(_on_visual_fall_finished)
+		TimeManager.season_changed.connect(_on_season_changed)
+		set_growth_stage(initial_stage)
+		_refresh_groups()
+	elif _visual != null:
+		_visual.setup(tree_data, initial_stage)
 
 
-func set_growth_stage(stage: TreeResource.GrowthStage) -> void:
-	growth_stage = stage
-	_update_sprite_for_stage()
+func set_growth_stage(stage: Variant) -> void:
+	growth_stage = TreeResource.coerce_growth_stage(stage)
+	if _visual != null:
+		_visual.apply_stage(growth_stage)
+	_update_collision_for_stage()
+
+	if growth_stage == TreeResource.GrowthStage.MATURE:
+		_phase = TreePhase.STANDING
+	else:
+		_phase = TreePhase.GROWING
+
 	growth_stage_changed.emit(growth_stage)
-	_refresh_choppable_group()
+	_refresh_groups()
 
 
 func advance_growth_if_possible() -> void:
@@ -54,38 +74,46 @@ func advance_growth_if_possible() -> void:
 
 	growth_stalled = false
 	var next_stage: int = int(growth_stage) + 1
-	set_growth_stage(next_stage as TreeResource.GrowthStage)
+	set_growth_stage(next_stage)
 
 
 func can_be_chopped() -> bool:
-	return growth_stage == TreeResource.GrowthStage.MATURE and _visual_state == VisualState.IDLE
+	if tree_data == null or _visual_state != VisualState.IDLE:
+		return false
+	if _phase == TreePhase.STANDING:
+		return growth_stage == TreeResource.GrowthStage.MATURE
+	if _phase == TreePhase.FELLED_STUMP:
+		return true
+	return false
+
+
+func get_chop_global_position() -> Vector2:
+	if use_chop_marker and _chop_marker != null:
+		return _chop_marker.global_position
+
+	var local_offset: Vector2 = Vector2.ZERO
+	if tree_data != null:
+		local_offset.y += tree_data.chop_anchor_offset_y
+	return global_position + local_offset
 
 
 func is_in_chop_range(player_global_pos: Vector2) -> bool:
-	if tree_data == null:
-		return false
-	return global_position.distance_to(player_global_pos) <= tree_data.chop_range
+	var range_value: float = chop_range if chop_range > 0.0 else 72.0
+	if tree_data != null and chop_range <= 0.0:
+		range_value = tree_data.chop_range
+	return get_chop_global_position().distance_to(player_global_pos) <= range_value
 
 
 func take_chop_hit(player_global_pos: Vector2) -> bool:
 	if not can_be_chopped() or tree_data == null:
 		return false
-	if _visual_state != VisualState.IDLE:
-		return false
 
-	chop_hits += 1
-	_play_hit_shake()
-	_spawn_hit_wood_drop()
+	if _phase == TreePhase.STANDING:
+		return _take_standing_chop_hit(player_global_pos)
+	if _phase == TreePhase.FELLED_STUMP:
+		return _take_stump_chop_hit()
 
-	if chop_hits >= tree_data.chops_required:
-		var fall_dir: Vector2 = (global_position - player_global_pos).normalized()
-		if fall_dir == Vector2.ZERO:
-			fall_dir = Vector2.UP
-		_start_fall(fall_dir)
-	else:
-		return true
-
-	return true
+	return false
 
 
 func get_map_cell() -> Vector2i:
@@ -97,53 +125,99 @@ func get_map_cell() -> Vector2i:
 	return tile_destructor.global_to_map(global_position)
 
 
-func _update_sprite_for_stage() -> void:
-	if _sprite == null or tree_data == null:
+func _take_standing_chop_hit(player_global_pos: Vector2) -> bool:
+	chop_hits += 1
+	if _visual != null:
+		_visual.play_hit_shake()
+	_spawn_hit_wood_drop()
+
+	if chop_hits >= tree_data.chops_required:
+		var fall_dir: Vector2 = (global_position - player_global_pos).normalized()
+		if fall_dir == Vector2.ZERO:
+			fall_dir = Vector2.UP
+		_start_fall(fall_dir)
+
+	return true
+
+
+func _take_stump_chop_hit() -> bool:
+	stump_chop_hits += 1
+	if _visual != null:
+		_visual.play_stump_shake()
+
+	if stump_chop_hits < tree_data.stump_chops_required:
+		return true
+
+	_clear_stump()
+	return true
+
+
+func _start_fall(fall_direction: Vector2) -> void:
+	if _visual == null or tree_data == null:
+		return
+
+	_phase = TreePhase.FELLING
+	_visual_state = VisualState.FALLING
+	_refresh_groups()
+	_visual.start_fall(fall_direction)
+
+
+func _on_visual_fall_finished(fall_direction: Vector2) -> void:
+	_spawn_fall_loot(fall_direction)
+
+	if _visual != null:
+		_visual.enter_felled_state()
+
+	_phase = TreePhase.FELLED_STUMP
+	_visual_state = VisualState.IDLE
+	stump_chop_hits = 0
+	_update_collision_for_stump()
+	_refresh_groups()
+	tree_felled.emit(self, fall_direction)
+
+
+func _clear_stump() -> void:
+	_spawn_stump_loot()
+
+	if _visual != null:
+		_visual.play_stump_break()
+
+	var on_farm: bool = TreeRegenerationService.is_position_on_farm(global_position)
+	stump_cleared.emit(self, global_position, on_farm)
+	if not on_farm:
+		TreeRegenerationService.register_cleared_stump(global_position, tree_data)
+
+	var break_delay: float = 0.22
+	await get_tree().create_timer(break_delay).timeout
+	queue_free()
+
+
+func _on_season_changed(_new_season: TimeManager.Season) -> void:
+	if _visual != null:
+		_visual.refresh_season_texture()
+
+
+func _update_collision_for_stage() -> void:
+	if _collision == null or tree_data == null:
+		return
+
+	if _phase == TreePhase.FELLED_STUMP:
+		_update_collision_for_stump()
 		return
 
 	var index: int = int(growth_stage) - 1
-	if tree_data.stage_textures.size() > index:
-		_sprite.texture = tree_data.stage_textures[index]
-	elif tree_data.stage_textures.size() > 0:
-		_sprite.texture = tree_data.stage_textures[0]
-
-	if tree_data.stage_scales.size() > index:
-		_sprite.scale = Vector2.ONE * tree_data.stage_scales[index]
-	elif tree_data.stage_scales.size() > 0:
-		_sprite.scale = Vector2.ONE * tree_data.stage_scales[0]
-
-	# 碰撞随阶段缩放
-	if _collision != null and tree_data.stage_scales.size() > index:
-		var scale_factor: float = tree_data.stage_scales[index]
-		_collision.scale = Vector2(scale_factor, scale_factor)
+	var scale_factor: float = 1.0
+	if growth_stage == TreeResource.GrowthStage.MATURE:
+		scale_factor = 1.0
+	elif tree_data.stage_scales.size() > index:
+		scale_factor = tree_data.stage_scales[index]
+	_collision.scale = Vector2(scale_factor, scale_factor)
 
 
-func _play_hit_shake() -> void:
-	if _sprite == null or tree_data == null:
+func _update_collision_for_stump() -> void:
+	if _collision == null:
 		return
-
-	_visual_state = VisualState.HIT_SHAKE
-	if _shake_tween != null and _shake_tween.is_valid():
-		_shake_tween.kill()
-
-	var strength: float = tree_data.hit_shake_strength
-	var duration: float = tree_data.hit_shake_duration
-	var original: Vector2 = _base_sprite_position
-
-	_shake_tween = create_tween()
-	_shake_tween.tween_property(
-		_sprite, "position", original + Vector2(strength, 0), duration * 0.25
-	)
-	_shake_tween.tween_property(
-		_sprite, "position", original + Vector2(-strength, strength * 0.5), duration * 0.25
-	)
-	_shake_tween.tween_property(_sprite, "position", original, duration * 0.5)
-	_shake_tween.finished.connect(_on_hit_shake_finished, CONNECT_ONE_SHOT)
-
-
-func _on_hit_shake_finished() -> void:
-	if _visual_state == VisualState.HIT_SHAKE:
-		_visual_state = VisualState.IDLE
+	_collision.scale = Vector2(0.65, 0.65)
 
 
 func _spawn_hit_wood_drop() -> void:
@@ -151,37 +225,6 @@ func _spawn_hit_wood_drop() -> void:
 	var drops_parent: Node = _get_drops_parent()
 	if wood != null and drops_parent != null:
 		DropSpawner.spawn_near(drops_parent, wood, 1, global_position, 24.0)
-
-
-func _start_fall(fall_direction: Vector2) -> void:
-	if _sprite == null or tree_data == null:
-		return
-
-	_visual_state = VisualState.FALLING
-	remove_from_group(&"choppable_tree")
-
-	if _fall_tween != null and _fall_tween.is_valid():
-		_fall_tween.kill()
-
-	var fall_angle: float = fall_direction.angle() + PI * 0.5
-	var duration: float = tree_data.fall_duration
-
-	_fall_tween = create_tween()
-	_fall_tween.set_parallel(true)
-	_fall_tween.tween_property(_sprite, "rotation", fall_angle, duration).set_ease(
-		Tween.EASE_IN
-	)
-	_fall_tween.tween_property(
-		_sprite, "modulate:a", 0.0, duration * 0.35
-	).set_delay(duration * 0.65)
-	_fall_tween.chain().tween_callback(_on_fall_finished.bind(fall_direction))
-
-
-func _on_fall_finished(fall_direction: Vector2) -> void:
-	_spawn_fall_loot(fall_direction)
-	_spawn_stump()
-	tree_felled.emit(self, fall_direction)
-	queue_free()
 
 
 func _spawn_fall_loot(fall_direction: Vector2) -> void:
@@ -217,20 +260,25 @@ func _spawn_fall_loot(fall_direction: Vector2) -> void:
 		)
 
 
-func _spawn_stump() -> void:
-	var stump_scene: PackedScene = load("res://Scenes/props/nature/tree_stump.tscn") as PackedScene
-	if stump_scene == null:
+func _spawn_stump_loot() -> void:
+	if tree_data == null:
 		return
 
-	var parent_node: Node = get_parent()
-	if parent_node == null:
+	var drops_parent: Node = _get_drops_parent()
+	if drops_parent == null:
 		return
 
-	var stump: Node2D = stump_scene.instantiate() as Node2D
-	parent_node.add_child(stump)
-	stump.global_position = global_position
-	if stump.has_method(&"setup_from_tree"):
-		stump.setup_from_tree(tree_data, player_planted)
+	var bonus: int = GameState.get_foraging_drop_bonus()
+	var wood_item: ItemResource = ItemRegistry.get_item(&"wood")
+	var sap_item: ItemResource = ItemRegistry.get_item(&"tree_sap")
+
+	var wood_count: int = (
+		randi_range(tree_data.stump_wood_min, tree_data.stump_wood_max) + bonus
+	)
+	if wood_item != null:
+		DropSpawner.spawn_near(drops_parent, wood_item, wood_count, global_position, 36.0)
+	if sap_item != null:
+		DropSpawner.spawn_near(drops_parent, sap_item, tree_data.stump_sap_count, global_position, 20.0)
 
 
 func _get_drops_parent() -> Node:
@@ -240,11 +288,16 @@ func _get_drops_parent() -> Node:
 	return main.get_node_or_null("World/YSort_Objects/Drops")
 
 
-func _refresh_choppable_group() -> void:
-	if growth_stage == TreeResource.GrowthStage.MATURE:
+func _refresh_groups() -> void:
+	if _phase == TreePhase.STANDING:
 		add_to_group(&"choppable_tree")
+		remove_from_group(&"tree_stump")
+	elif _phase == TreePhase.FELLED_STUMP:
+		remove_from_group(&"choppable_tree")
+		add_to_group(&"tree_stump")
 	else:
 		remove_from_group(&"choppable_tree")
+		remove_from_group(&"tree_stump")
 
 
 func _is_growth_stalled() -> bool:

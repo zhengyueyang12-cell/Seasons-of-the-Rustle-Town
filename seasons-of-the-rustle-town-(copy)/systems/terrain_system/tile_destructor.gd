@@ -22,6 +22,10 @@ const NEIGHBOR_OFFSETS_8: Array[Vector2i] = [
 	Vector2i(-1, -1), Vector2i(-1, 1), Vector2i(1, -1), Vector2i(1, 1),
 ]
 
+const CARDINAL_OFFSETS: Array[Vector2i] = [
+	Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1),
+]
+
 ## 在 Inspector 中配置后，_ready() 会自动调用 init_system()
 @export var ground_layer_path: NodePath = NodePath("../TileMapLayerGround")
 @export var terrain_set_id: int = 0
@@ -150,10 +154,10 @@ func _apply_destruction(
 	match _destroy_mode:
 		DestroyMode.ERASE_CELL:
 			_erase_cells(cells_to_change)
-			_refresh_grass_border(cells_to_update)
+			_refresh_terrain_blend(cells_to_change, cells_to_update)
 		DestroyMode.REPLACE_TERRAIN:
 			_replace_with_target_terrain(cells_to_change)
-			_refresh_grass_border(cells_to_update)
+			_refresh_terrain_blend(cells_to_change, cells_to_update)
 
 
 func _erase_cells(cells: Array[Vector2i]) -> void:
@@ -164,34 +168,105 @@ func _erase_cells(cells: Array[Vector2i]) -> void:
 func _replace_with_target_terrain(cells: Array[Vector2i]) -> void:
 	if cells.is_empty():
 		return
+	var ready_cells: Array[Vector2i] = _repair_stale_atlas_cells(cells)
+	if ready_cells.is_empty():
+		return
 	# 第一步：将破坏区内瓦片统一设为目标地形（泥土），引擎自动挑选坑内融合贴图
 	_layer.set_cells_terrain_connect(
-		cells,
+		ready_cells,
 		_terrain_set_id,
 		_target_terrain_id,
 		true
 	)
 
 
-func _refresh_grass_border(cells: Array[Vector2i]) -> void:
-	if cells.is_empty():
-		return
-	if _source_terrain_id < 0:
+## 锄地后重算边缘：泥土块融合 + 周围草地显示悬垂草叶（y=1 行）
+## 锄地后重算边缘：与编辑器逻辑一致，只需让泥土图块去主动连接周围
+func _refresh_terrain_blend(
+	cells_changed: Array[Vector2i],
+	cells_to_update: Array[Vector2i]
+) -> void:
+	var refresh_lookup: Dictionary = {}
+	for cell: Vector2i in cells_changed:
+		refresh_lookup[cell] = true
+	for cell: Vector2i in cells_to_update:
+		refresh_lookup[cell] = true
+
+	var refresh_cells: Array[Vector2i] = []
+	for key: Variant in refresh_lookup.keys():
+		refresh_cells.append(key as Vector2i)
+		
+	var safe_cells: Array[Vector2i] = _repair_stale_atlas_cells(refresh_cells)
+	if safe_cells.is_empty():
 		return
 
-	# 只刷新仍保持源地形（草地）的外围格子，避免误改泥土
-	var grass_border: Array[Vector2i] = _filter_cells_with_terrain(cells, _source_terrain_id)
-	if grass_border.is_empty():
-		return
+	# 核心改动：我们只收集当前已经是泥土的地形格子（包括新锄的，和外圈原本就是泥土的）
+	var dirt_cells: Array[Vector2i] = []
+	for cell: Vector2i in safe_cells:
+		if _get_cell_terrain(cell) == _target_terrain_id:
+			dirt_cells.append(cell)
 
-	# 第二步（逆向多米诺）：强制外圈草地重新计算 Terrain Peering
-	# 草地一侧邻接泥土/空洞后，边缘贴图会从"完整草块"变为"带裸露边的过渡块"
-	_layer.set_cells_terrain_connect(
-		grass_border,
-		_terrain_set_id,
-		_source_terrain_id,
-		true
-	)
+	# 借助你写好的扩展函数，把原本就相邻的旧耕地格子一并纳进来计算，防止旧耕地边缘不刷新
+	if not dirt_cells.is_empty():
+		dirt_cells = _expand_dirt_blend_cells(dirt_cells)
+		
+		# 唯独只对泥土调用一次连接，这样引擎就会自动算好泥土与草地的交界
+		_layer.set_cells_terrain_connect(
+			dirt_cells,
+			_terrain_set_id,
+			_target_terrain_id,
+			true
+		)
+
+
+
+## 与编辑器「刷新全部地形融合」一致：相邻耕地格一并重算 autotile。
+func _expand_dirt_blend_cells(dirt_cells: Array[Vector2i]) -> Array[Vector2i]:
+	var lookup: Dictionary = {}
+	for cell: Vector2i in dirt_cells:
+		lookup[cell] = true
+
+	var expanded: Array[Vector2i] = dirt_cells.duplicate()
+	for cell: Vector2i in dirt_cells:
+		for offset: Vector2i in CARDINAL_OFFSETS:
+			var neighbor: Vector2i = cell + offset
+			if lookup.has(neighbor):
+				continue
+			if _get_cell_terrain(neighbor) != _target_terrain_id:
+				continue
+			lookup[neighbor] = true
+			expanded.append(neighbor)
+	return expanded
+
+
+## 旧 TileSet 换图后，格子可能仍存着无效 atlas 坐标（如 7:8），Terrain 刷新会崩溃。
+func _repair_stale_atlas_cells(cells: Array[Vector2i]) -> Array[Vector2i]:
+	var stale: Array[Vector2i] = []
+	var result: Array[Vector2i] = []
+
+	for cell: Vector2i in cells:
+		if not _has_tile(cell):
+			continue
+		if FarmTilemapUtils.is_stale_cell(_layer, cell):
+			stale.append(cell)
+		else:
+			result.append(cell)
+
+	if stale.is_empty():
+		return result
+
+	for cell: Vector2i in stale:
+		_layer.erase_cell(cell)
+
+	if _source_terrain_id >= 0:
+		_layer.set_cells_terrain_connect(
+			stale,
+			_terrain_set_id,
+			_source_terrain_id,
+			false
+		)
+		result.append_array(stale)
+	return result
 
 
 func _collect_cells_in_range(center: Vector2i, radius: float) -> Array[Vector2i]:
@@ -223,7 +298,13 @@ func _is_destructible_cell(cell: Vector2i) -> bool:
 		return false
 	if _source_terrain_id < 0:
 		return true
-	return _get_cell_terrain(cell) == _source_terrain_id
+	var terrain: int = _get_cell_terrain(cell)
+	if terrain == _source_terrain_id:
+		return true
+	# 换 TileSet 后 atlas 坐标失效，仍视为可锄草地
+	if FarmTilemapUtils.is_stale_cell(_layer, cell):
+		return true
+	return false
 
 
 func _has_tile(cell: Vector2i) -> bool:
@@ -231,20 +312,13 @@ func _has_tile(cell: Vector2i) -> bool:
 
 
 func _get_cell_terrain(cell: Vector2i) -> int:
-	var tile_data: TileData = _layer.get_cell_tile_data(cell)
+	var tile_data: TileData = FarmTilemapUtils.get_safe_tile_data(_layer, cell)
 	if tile_data == null:
 		return -1
 	if tile_data.get_terrain_set() != _terrain_set_id:
 		return -1
 	return tile_data.get_terrain()
 
-
-func _filter_cells_with_terrain(cells: Array[Vector2i], terrain_id: int) -> Array[Vector2i]:
-	var result: Array[Vector2i] = []
-	for cell: Vector2i in cells:
-		if _get_cell_terrain(cell) == terrain_id:
-			result.append(cell)
-	return result
 
 
 func _build_cell_lookup(cells: Array[Vector2i]) -> Dictionary:

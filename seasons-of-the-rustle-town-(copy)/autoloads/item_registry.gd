@@ -49,7 +49,13 @@ func _register_default_items() -> void:
 
 
 func _load_items_from_directory() -> void:
-	var dir: DirAccess = DirAccess.open(ITEMS_DIR)
+	_load_items_in_dir(ITEMS_DIR)
+	_load_items_in_dir(ITEMS_DIR + "seeds/")
+	_load_items_in_dir(ITEMS_DIR + "produce/")
+
+
+func _load_items_in_dir(dir_path: String) -> void:
+	var dir: DirAccess = DirAccess.open(dir_path)
 	if dir == null:
 		return
 
@@ -57,7 +63,7 @@ func _load_items_from_directory() -> void:
 	var file_name: String = dir.get_next()
 	while file_name != "":
 		if not dir.current_is_dir() and file_name.ends_with(".tres"):
-			var path: String = ITEMS_DIR + file_name
+			var path: String = dir_path + file_name
 			var resource: Resource = load(path)
 			if resource is ItemResource and not (resource is ToolResource):
 				var item: ItemResource = resource as ItemResource

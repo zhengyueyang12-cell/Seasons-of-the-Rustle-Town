@@ -2,18 +2,51 @@
 
 [ext_resource type="Script" uid="uid://c5sqpckwrs2j8" path="res://systems/tree_system/tree_entity.gd" id="1_tree"]
 [ext_resource type="Resource" uid="uid://dne602aetnsyo" path="res://resources/trees/oak_tree.tres" id="2_data"]
+[ext_resource type="Script" uid="uid://cpdft18i056yb" path="res://systems/tree_system/tree_visual.gd" id="3_visual"]
+[ext_resource type="Texture2D" uid="uid://d2alpsb28yapf" path="res://art/world/TerrainFeatures/tree1_spring..png" id="4_jjl46"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jjl46"]
+atlas = ExtResource("4_jjl46")
+region = Rect2(16, 144, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cc7wc"]
+atlas = ExtResource("4_jjl46")
+region = Rect2(0, 4, 48, 72)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_tree"]
 radius = 18.0
 
-[node name="Tree" type="StaticBody2D" unique_id=815410511]
+[node name="Tree" type="StaticBody2D" unique_id=205929223]
 collision_layer = 2
 script = ExtResource("1_tree")
 tree_data = ExtResource("2_data")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1325106596]
-position = Vector2(0, -24)
+[node name="TreeVisual" type="Node2D" parent="." unique_id=391266745]
+script = ExtResource("3_visual")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1272113732]
-position = Vector2(0, 8)
+[node name="StumpSprite" type="Sprite2D" parent="TreeVisual" unique_id=656305568]
+position = Vector2(0, -16)
+scale = Vector2(2, 2)
+texture = SubResource("AtlasTexture_jjl46")
+
+[node name="BodyPivot" type="Node2D" parent="TreeVisual" unique_id=1563601609]
+position = Vector2(0, -32)
+
+[node name="BodySprite" type="Sprite2D" parent="TreeVisual/BodyPivot" unique_id=904288232]
+position = Vector2(0, -66)
+scale = Vector2(2, 2)
+texture = SubResource("AtlasTexture_cc7wc")
+
+[node name="GrowthSprite" type="Sprite2D" parent="TreeVisual" unique_id=1893992057]
+visible = false
+
+[node name="ChopMarker" type="Marker2D" parent="." unique_id=169130226]
+position = Vector2(0, -96)
+
+[node name="LeafEmitter" type="Marker2D" parent="." unique_id=169130227]
+position = Vector2(0, -107)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1002150056]
+position = Vector2(2, -28)
+scale = Vector2(0.5, 0.5)
 shape = SubResource("CircleShape2D_tree")

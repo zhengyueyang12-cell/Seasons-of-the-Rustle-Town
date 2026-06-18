@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="ItemResource" format=3 uid="uid://cbdlgm6yfq8it"]
 
 [ext_resource type="Script" uid="uid://cikpwqdl03mbi" path="res://resources/item_resource.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://3ri2ghjepk40" path="res://art/world/props/rustic-pots/Rustic Roses Pots/Rustic Rose Pot Purple.png" id="1_w3n26"]
+[ext_resource type="Texture2D" uid="uid://4puqgk82rqti" path="res://art/items/TileSheets/branch.png" id="1_w3n26"]
 
 [resource]
 script = ExtResource("1_script")

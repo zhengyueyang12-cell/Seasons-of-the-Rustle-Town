@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="TreeResource" format=3 uid="uid://bc743hl1qw4ir"]
+
+[ext_resource type="Script" uid="uid://cxtk8bdxnkjwb" path="res://resources/tree_resource.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"birch"
+display_name = "白桦"
+atlas_key = "tree2"
+chops_required = 4
+fall_wood_min = 9
+fall_wood_max = 13
+fall_sap_count = 4

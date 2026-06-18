@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CropResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/crop_resource.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"tomato"
+display_name = "番茄"
+stage_atlas_coords = Array[Vector2i]([Vector2i(8, 4), Vector2i(9, 4), Vector2i(10, 4), Vector2i(11, 4), Vector2i(12, 4), Vector2i(13, 4), Vector2i(14, 4), Vector2i(15, 4)])
+days_per_stage = 1
+harvest_item_id = &"tomato"
+harvest_amount = 1
+valid_seasons = Array[int]([1])

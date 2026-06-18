@@ -11,7 +11,7 @@ var _farm_zones: Array[Area2D] = []
 var _cleared_stump_spots: Array[Dictionary] = []
 
 var _tree_scene: PackedScene = preload("res://Scenes/props/nature/tree.tscn")
-var _oak_data: TreeResource = preload("res://resources/trees/oak_tree.tres")
+var _default_tree_data: TreeResource = preload("res://resources/trees/oak_tree.tres")
 
 
 func _ready() -> void:
@@ -88,7 +88,8 @@ func _try_farm_seed_spread() -> void:
 					cell,
 					tile_destructor,
 					TreeResource.GrowthStage.SEED,
-					false
+					false,
+					_pick_random_tree_data()
 				)
 
 
@@ -114,7 +115,7 @@ func _try_wild_sprout_regrowth() -> void:
 			remaining.append(spot)
 			continue
 
-		var data: TreeResource = spot.get("tree_data", _oak_data) as TreeResource
+		var data: TreeResource = spot.get("tree_data", _default_tree_data) as TreeResource
 		_spawn_tree_at_cell(
 			trees_parent,
 			cell,
@@ -174,7 +175,7 @@ func _spawn_tree_at_cell(
 
 	parent.add_child(tree)
 	tree.global_position = tile_destructor.map_to_global(cell)
-	tree.tree_data = data if data != null else _oak_data
+	tree.tree_data = data if data != null else _default_tree_data
 	tree.player_planted = planted
 	tree.set_growth_stage(stage)
 
@@ -238,6 +239,13 @@ func _point_in_area(area: Area2D, local_point: Vector2) -> bool:
 				var center: Vector2 = transform * local_point
 				return center.length() <= circle.radius
 	return false
+
+
+func _pick_random_tree_data() -> TreeResource:
+	var random_tree: TreeResource = TreeRegistry.get_random_tree()
+	if random_tree != null:
+		return random_tree
+	return _default_tree_data
 
 
 func _get_trees_parent() -> Node2D:

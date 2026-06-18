@@ -1,5 +1,7 @@
 extends Node
 
+const _SLOT_OPS = preload("res://autoloads/item_slot_ops.gd")
+
 signal inventory_changed()
 signal slot_changed(slot_index: int)
 
@@ -7,16 +9,7 @@ const INVENTORY_ROWS: int = 4
 const INVENTORY_COLUMNS: int = 6
 const SLOT_COUNT: int = INVENTORY_ROWS * INVENTORY_COLUMNS
 
-class SlotData:
-	var item: ItemResource = null
-	var quantity: int = 0
-
-	var is_empty: bool:
-		get:
-			return item == null or quantity <= 0
-
-
-var slots: Array[SlotData] = []
+var slots: Array[ItemSlotData] = []
 
 
 func _ready() -> void:
@@ -26,7 +19,7 @@ func _ready() -> void:
 func _initialize_slots() -> void:
 	slots.clear()
 	for _i: int in SLOT_COUNT:
-		slots.append(SlotData.new())
+		slots.append(ItemSlotData.new())
 
 
 func add_item(item: ItemResource, amount: int) -> int:
@@ -52,24 +45,31 @@ func remove_item(item_id: StringName, amount: int) -> bool:
 		return false
 
 	var remaining: int = amount
-	for i: int in SLOT_COUNT:
-		var slot: SlotData = slots[i]
-		if slot.is_empty or slot.item.id != item_id:
-			continue
+	remaining = _remove_from_slots(slots, remaining, item_id, SLOT_COUNT)
+	if remaining > 0:
+		remaining = _remove_from_hotbar(item_id, remaining)
 
-		var removed: int = mini(slot.quantity, remaining)
-		slot.quantity -= removed
-		remaining -= removed
+	inventory_changed.emit()
+	HotbarManager.hotbar_changed.emit()
+	return remaining <= 0
 
-		if slot.quantity <= 0:
-			slot.item = null
-			slot.quantity = 0
 
-		slot_changed.emit(i)
+func remove_from_slot(slot_index: int, amount: int) -> bool:
+	if amount <= 0:
+		return true
+	if not _is_valid_index(slot_index):
+		return false
 
-		if remaining <= 0:
-			break
+	var slot: ItemSlotData = slots[slot_index]
+	if slot.is_empty or slot.quantity < amount:
+		return false
 
+	slot.quantity -= amount
+	if slot.quantity <= 0:
+		slot.item = null
+		slot.quantity = 0
+
+	slot_changed.emit(slot_index)
 	inventory_changed.emit()
 	return true
 
@@ -80,35 +80,7 @@ func swap_slots(index_a: int, index_b: int) -> void:
 	if index_a == index_b:
 		return
 
-	var slot_a: SlotData = slots[index_a]
-	var slot_b: SlotData = slots[index_b]
-
-	if (
-		not slot_a.is_empty
-		and not slot_b.is_empty
-		and slot_a.item.id == slot_b.item.id
-	):
-		var max_stack: int = slot_a.item.max_stack
-		var space_in_b: int = max_stack - slot_b.quantity
-		if space_in_b > 0:
-			var moved: int = mini(space_in_b, slot_a.quantity)
-			slot_b.quantity += moved
-			slot_a.quantity -= moved
-			if slot_a.quantity <= 0:
-				slot_a.item = null
-				slot_a.quantity = 0
-			slot_changed.emit(index_a)
-			slot_changed.emit(index_b)
-			inventory_changed.emit()
-			return
-
-	var temp_item: ItemResource = slot_a.item
-	var temp_quantity: int = slot_a.quantity
-	slot_a.item = slot_b.item
-	slot_a.quantity = slot_b.quantity
-	slot_b.item = temp_item
-	slot_b.quantity = temp_quantity
-
+	_SLOT_OPS.swap_slots(slots, index_a, index_b)
 	slot_changed.emit(index_a)
 	slot_changed.emit(index_b)
 	inventory_changed.emit()
@@ -116,13 +88,14 @@ func swap_slots(index_a: int, index_b: int) -> void:
 
 func get_item_count(item_id: StringName) -> int:
 	var total: int = 0
-	for slot: SlotData in slots:
+	for slot: ItemSlotData in slots:
 		if not slot.is_empty and slot.item.id == item_id:
 			total += slot.quantity
+	total += HotbarManager.get_item_count(item_id)
 	return total
 
 
-func get_slot(index: int) -> SlotData:
+func get_slot(index: int) -> ItemSlotData:
 	if not _is_valid_index(index):
 		return null
 	return slots[index]
@@ -136,7 +109,7 @@ func clear_inventory() -> void:
 func _stack_into_existing(item: ItemResource, amount: int) -> int:
 	var remaining: int = amount
 	for i: int in SLOT_COUNT:
-		var slot: SlotData = slots[i]
+		var slot: ItemSlotData = slots[i]
 		if slot.is_empty or slot.item.id != item.id:
 			continue
 
@@ -161,7 +134,7 @@ func _fill_empty_slots(item: ItemResource, amount: int) -> int:
 		if remaining <= 0:
 			break
 
-		var slot: SlotData = slots[i]
+		var slot: ItemSlotData = slots[i]
 		if not slot.is_empty:
 			continue
 
@@ -170,6 +143,55 @@ func _fill_empty_slots(item: ItemResource, amount: int) -> int:
 		slot.quantity = added
 		remaining -= added
 		slot_changed.emit(i)
+
+	return remaining
+
+
+func _remove_from_slots(
+	target_slots: Array,
+	remaining: int,
+	item_id: StringName,
+	count: int
+) -> int:
+	for i: int in count:
+		var slot: ItemSlotData = target_slots[i]
+		if slot.is_empty or slot.item.id != item_id:
+			continue
+
+		var removed: int = mini(slot.quantity, remaining)
+		slot.quantity -= removed
+		remaining -= removed
+
+		if slot.quantity <= 0:
+			slot.item = null
+			slot.quantity = 0
+
+		slot_changed.emit(i)
+
+		if remaining <= 0:
+			break
+
+	return remaining
+
+
+func _remove_from_hotbar(item_id: StringName, remaining: int) -> int:
+	for i: int in HotbarManager.SLOT_COUNT:
+		var slot: ItemSlotData = HotbarManager.get_slot(i)
+		if slot == null or slot.is_empty or slot.item.id != item_id:
+			continue
+
+		var removed: int = mini(slot.quantity, remaining)
+		slot.quantity -= removed
+		remaining -= removed
+
+		if slot.quantity <= 0:
+			slot.item = null
+			slot.quantity = 0
+
+		HotbarManager.slot_changed.emit(i)
+
+		if remaining <= 0:
+			break
 
 	return remaining
 

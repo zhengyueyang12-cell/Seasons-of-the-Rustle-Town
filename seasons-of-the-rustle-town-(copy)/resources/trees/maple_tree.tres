@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="TreeResource" format=3 uid="uid://bl4ihf2mvwxd4"]
+
+[ext_resource type="Script" uid="uid://cxtk8bdxnkjwb" path="res://resources/tree_resource.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"maple"
+display_name = "枫树"
+fall_wood_min = 11
+fall_wood_max = 15
+fall_sap_count = 7
+fall_seed_min = 1
+fall_seed_max = 3
