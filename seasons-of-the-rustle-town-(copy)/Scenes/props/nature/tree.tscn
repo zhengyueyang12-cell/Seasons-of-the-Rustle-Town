@@ -33,6 +33,7 @@ texture = SubResource("AtlasTexture_jjl46")
 position = Vector2(0, -32)
 
 [node name="BodySprite" type="Sprite2D" parent="TreeVisual/BodyPivot" unique_id=904288232]
+z_index = 1
 position = Vector2(0, -66)
 scale = Vector2(2, 2)
 texture = SubResource("AtlasTexture_cc7wc")

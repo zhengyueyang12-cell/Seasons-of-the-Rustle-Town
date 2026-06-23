@@ -204,7 +204,7 @@ func _has_tree_at_cell(cell: Vector2i, tile_destructor: TileDestructor) -> bool:
 
 
 func _is_grass_cell(cell: Vector2i, tile_destructor: TileDestructor) -> bool:
-	return tile_destructor.get_cell_terrain(cell) == tile_destructor.get_runtime_source_terrain_id()
+	return tile_destructor.get_cell_terrain(cell) == tile_destructor.get_runtime_meadow_terrain_id()
 
 
 func _is_tilled_cell(cell: Vector2i, tile_destructor: TileDestructor) -> bool:

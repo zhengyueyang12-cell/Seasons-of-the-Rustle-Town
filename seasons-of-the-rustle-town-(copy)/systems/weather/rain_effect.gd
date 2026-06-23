@@ -24,21 +24,32 @@ const SPLASH_H_FRAMES: int = 3
 ## 雨丝贴图本身向左下倾斜，运动矢量需与贴图一致（负值=向左飘）
 @export_range(-0.6, 0.6, 0.01) var rain_wind_x: float = -0.2
 
+@export_group("色调")
+@export var rain_particle_color: Color = Color(0.48, 0.78, 1.0, 0.78)
+@export var splash_particle_color: Color = Color(0.52, 0.84, 1.0, 0.72)
+@export var use_atmosphere_overlay: bool = true
+@export var atmosphere_color: Color = Color(0.38, 0.54, 0.82, 0.22)
+
 @export_group("调试")
 @export var force_rain_in_editor: bool = false
 @export var force_rain_in_game: bool = true
 
 var _rain: GPUParticles2D
 var _splash: GPUParticles2D
+var _atmosphere: ColorRect
 
 
 func _ready() -> void:
 	z_index = 200
+	if use_atmosphere_overlay:
+		_atmosphere = _create_atmosphere_overlay()
+		add_child(_atmosphere)
 	_splash = _create_splash_particles()
 	_rain = _create_rain_particles()
 	add_child(_rain)
 	add_child(_splash)
 	_rain.sub_emitter = _rain.get_path_to(_splash)
+	_apply_particle_tints()
 	_update_emission_area()
 	_set_raining(false)
 
@@ -63,6 +74,31 @@ func _set_raining(active: bool) -> void:
 		_rain.emitting = active
 	if _splash != null:
 		_splash.emitting = active
+	if _atmosphere != null:
+		_atmosphere.visible = active
+
+
+func _create_atmosphere_overlay() -> ColorRect:
+	var overlay := ColorRect.new()
+	overlay.name = &"RainAtmosphere"
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.color = atmosphere_color
+	overlay.z_index = -1
+	overlay.visible = false
+	return overlay
+
+
+func _apply_particle_tints() -> void:
+	if _rain != null:
+		var rain_mat := _rain.process_material as ParticleProcessMaterial
+		if rain_mat != null:
+			rain_mat.color = rain_particle_color
+	if _splash != null:
+		var splash_mat := _splash.process_material as ParticleProcessMaterial
+		if splash_mat != null:
+			splash_mat.color = splash_particle_color
+	if _atmosphere != null:
+		_atmosphere.color = atmosphere_color
 
 
 func _frame_size() -> Vector2i:
@@ -100,6 +136,9 @@ func _update_emission_area() -> void:
 			rain_mat.emission_box_extents = box
 	if _splash != null:
 		_splash.visibility_rect = rect
+	if _atmosphere != null:
+		_atmosphere.position = -half
+		_atmosphere.size = half * 2.0
 
 
 func _pixel_scale(frame_h: int, target_px: float, min_s: float, max_s: float) -> float:
@@ -141,7 +180,7 @@ func _create_rain_particles() -> GPUParticles2D:
 	var rain_scale: float = _pixel_scale(frame_h, 7.0, 0.45, 0.95)
 	mat.scale_min = rain_scale
 	mat.scale_max = rain_scale * 1.1
-	mat.color = Color(0.82, 0.9, 1.0, 0.38)
+	mat.color = rain_particle_color
 	mat.sub_emitter_mode = ParticleProcessMaterial.SUB_EMITTER_AT_END
 	mat.sub_emitter_amount_at_end = sub_emitter_amount_at_end
 	mat.sub_emitter_keep_velocity = false
@@ -178,7 +217,7 @@ func _create_splash_particles() -> GPUParticles2D:
 	var splash_scale: float = _pixel_scale(frame_h, 5.5, 0.35, 0.75)
 	mat.scale_min = splash_scale
 	mat.scale_max = splash_scale * 1.15
-	mat.color = Color(0.78, 0.86, 0.98, 0.5)
+	mat.color = splash_particle_color
 	var splash_fps: float = float(SPLASH_H_FRAMES) / splash_lifetime
 	mat.anim_speed_min = splash_fps
 	mat.anim_speed_max = splash_fps

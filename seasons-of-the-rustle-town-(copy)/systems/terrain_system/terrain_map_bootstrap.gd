@@ -2,18 +2,19 @@
 class_name TerrainMapBootstrap
 extends TileMapLayer
 
-## 草地基底 + 泥土路/锄地融合
+## 三层地形：草(0) ↔ 土(1) ↔ 耕地(2)
 ##
-## 编辑器用法：
-## 1. 选 Terrain 画笔 → meadow 铺满草地
-## 2. 选 dirt 画土路（长条会自动融合）
-## 3. 运行游戏后锄地只在草地上挖圆坑，相邻坑变长条
+## 编辑器：
+## 1. Terrain 画笔选 meadow 铺草
+## 2. Terrain 画笔选 soil 画土路
+## 3. 运行后锄地仅把土变成耕地
 
 @export var auto_bootstrap: bool = false
-@export var remigrate_stale_atlas_on_ready: bool = true
+@export var remigrate_stale_atlas_on_ready: bool = false
 @export var terrain_set_id: int = 0
 @export var meadow_terrain_id: int = 0
-@export var dirt_terrain_id: int = 1
+@export var soil_terrain_id: int = 1
+@export var tilled_terrain_id: int = 2
 @export var fill_empty_farm_rect: bool = false
 @export var farm_rect: Rect2i = Rect2i(-18, -12, 36, 24)
 
@@ -100,21 +101,27 @@ func _bootstrap_meadow(full_remap: bool) -> void:
 
 func _refresh_all_terrain_connect() -> void:
 	var meadow_cells: Array[Vector2i] = []
-	var dirt_cells: Array[Vector2i] = []
+	var soil_cells: Array[Vector2i] = []
+	var tilled_cells: Array[Vector2i] = []
 
 	for cell: Vector2i in get_used_cells():
 		if FarmTilemapUtils.is_stale_cell(self, cell):
 			continue
 		var terrain: int = _get_cell_terrain(cell)
-		if terrain == meadow_terrain_id:
-			meadow_cells.append(cell)
-		elif terrain == dirt_terrain_id:
-			dirt_cells.append(cell)
+		match terrain:
+			meadow_terrain_id:
+				meadow_cells.append(cell)
+			soil_terrain_id:
+				soil_cells.append(cell)
+			tilled_terrain_id:
+				tilled_cells.append(cell)
 
 	if not meadow_cells.is_empty():
 		set_cells_terrain_connect(meadow_cells, terrain_set_id, meadow_terrain_id, true)
-	if not dirt_cells.is_empty():
-		set_cells_terrain_connect(dirt_cells, terrain_set_id, dirt_terrain_id, true)
+	if not soil_cells.is_empty():
+		set_cells_terrain_connect(soil_cells, terrain_set_id, soil_terrain_id, true)
+	if not tilled_cells.is_empty():
+		set_cells_terrain_connect(tilled_cells, terrain_set_id, tilled_terrain_id, true)
 
 
 func _get_cell_terrain(cell: Vector2i) -> int:
